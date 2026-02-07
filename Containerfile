@@ -45,7 +45,7 @@ ARG SYSTEM_CLI_SHA256SUM=ec5d01cdd8a7591b444cfb24d0d0415c76da2b38091b0c1c02a619d
 RUN if [ "$VARIANT" != container ]; then install-packages-build linux-zen linux-firmware linux-zen-headers broadcom-wl-dkms dracut; fi
 
 RUN if [ "$DESKTOP" == gnome ]; then install-packages-build gnome; \
-  elif [ "$DESKTOP" == plasma ]; then install-packages-build plasma kde-utilities-meta kde-accessibility-meta;
+  elif [ "$DESKTOP" == plasma ]; then install-packages-build plasma kde-utilities-meta kde-accessibility-meta; \
   fi
 
 RUN if [ "$DESKTOP" == gnome ]; then install-packages-build xorg-server gdm; systemctl enable gdm; \
@@ -61,6 +61,7 @@ RUN install-packages-build python-yaml python-click python-fasteners skopeo umoc
 COPY overlays/common /
 
 RUN wget -O cli.tar.gz https://github.com/CommonArch/system-cli/archive/refs/tags/"$SYSTEM_CLI_VERSION".tar.gz \
+	&& echo "$SYSTEM_CLI_SHA256SUM $SYSTEM_CLI_VERSION.tar.gz" | sha256sum --check --status &&
     && tar xf cli.tar.gz && cp -ax system-cli-"$SYSTEM_CLI_VERSION"/usr/* /usr && rm -rf cli.tar.gz system-cli-"$SYSTEM_CLI_VERSION"
 
 RUN systemctl enable commonarch-update-cleanup
