@@ -1,0 +1,8 @@
+[Unit]
+Description=System updates
+
+[Service]
+ExecStart=/usr/bin/system update-check
+
+[Install]
+WantedBy=default.target

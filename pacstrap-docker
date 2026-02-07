@@ -1,0 +1,42 @@
+#!/bin/bash
+
+# https://github.com/lopsided98/archlinux-docker/blob/master/pacstrap-docker (MIT-licensed by lopsided98)
+
+out() { printf "$1 $2\n" "${@:3}"; }
+error() { out "==> ERROR:" "$@"; } >&2
+die() { error "$@"; exit 1; }
+
+(( $# )) || die "No root directory specified"
+newroot=$1; shift
+pacman_args=("${@:-base}")
+
+if [[ $EUID -ne 0 ]]; then
+	die "This script must be run as root"
+fi
+
+[[ -d $newroot ]] || die "%s is not a directory" "$newroot"
+
+echo 'Creating install root at' "$newroot"
+mkdir -m 0755 -p "$newroot"/var/{cache/pacman/pkg,lib/pacman,log} "$newroot"/{dev,run,etc/pacman.d}
+mkdir -m 1777 -p "$newroot"/tmp
+mkdir -m 0555 -p "$newroot"/{sys,proc}
+cp -a /etc/pacman.d/gnupg "$newroot"/etc/pacman.d
+cp /etc/pacman.conf "$newroot"/etc
+ls -l "$newroot"/etc
+
+cat > /usr/bin/install-packages-build <<"EOF"
+#!/bin/bash
+pacman -Sy --needed --noconfirm "$@" || (sleep 10; pacman -Sy --needed --noconfirm "$@" || (sleep 10; pacman -Sy --needed --noconfirm "$@"))
+exit $?
+EOF
+
+chmod 755 /usr/bin/install-packages-build
+
+echo 'Installing packages to' "$newroot"
+if ! install-packages-build -r "$newroot" "${pacman_args[@]}"; then
+	die 'Failed to install packages to new root'
+fi
+
+cp /usr/bin/install-packages-build "$newroot"/usr/bin
+
+ln -sfn usr/lib64 /lib64

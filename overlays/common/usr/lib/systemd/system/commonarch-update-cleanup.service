@@ -1,0 +1,12 @@
+[Unit]
+Description=Clean-up following system update
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+Restart=no
+User=root
+ExecStart=/bin/sh -c 'rm -rf /.old.*'
+
+[Install]
+WantedBy=multi-user.target
